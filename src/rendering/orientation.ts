@@ -8,7 +8,8 @@ export function getIsBoardReversed(state: GameState): boolean {
 
 /** get the current orientation of the board (white or black). */
 export function getCurrentOrientation(state: GameState): boolean {
-    return getIsBoardReversed(state);
+    // return getIsBoardReversed(state); // use this if we want to flip the board in each turn
+    return true;
 }
 
 /** Translate board coords → display coords based on current orientation. */
