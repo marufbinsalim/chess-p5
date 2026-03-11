@@ -4,6 +4,22 @@ import "p5/lib/addons/p5.sound";
 import { ColorUtil } from "./utils/color";
 import { Chess } from "./utils/chess";
 
+// Import assets
+import wP from "../assets/wP.svg";
+import bP from "../assets/bP.svg";
+import wK from "../assets/wK.svg";
+import bK from "../assets/bK.svg";
+import wB from "../assets/wB.svg";
+import bB from "../assets/bB.svg";
+import wR from "../assets/wR.svg";
+import bR from "../assets/bR.svg";
+import wQ from "../assets/wQ.svg";
+import bQ from "../assets/bQ.svg";
+import wN from "../assets/wN.svg";
+import bN from "../assets/bN.svg";
+import moveSoundFile from "../assets/move.mp3";
+import captureSoundFile from "../assets/capture.mp3";
+
 const sketch = (p5: P5) => {
 	let canvas: P5.Renderer;
 	const chess = new Chess();
@@ -203,22 +219,22 @@ const sketch = (p5: P5) => {
 	}
 
 	p5.preload = () => {
-		pieceToImageMap.set("wP", p5.loadImage(`assets/${chess.getPieceName(Chess.PIECES.WHITE_PAWN)}.svg`));
-		pieceToImageMap.set("bP", p5.loadImage(`assets/${chess.getPieceName(Chess.PIECES.BLACK_PAWN)}.svg`));
-		pieceToImageMap.set("wK", p5.loadImage(`assets/${chess.getPieceName(Chess.PIECES.WHITE_KING)}.svg`));
-		pieceToImageMap.set("bK", p5.loadImage(`assets/${chess.getPieceName(Chess.PIECES.BLACK_KING)}.svg`));
-		pieceToImageMap.set("wB", p5.loadImage(`assets/${chess.getPieceName(Chess.PIECES.WHITE_BISHOP)}.svg`));
-		pieceToImageMap.set("bB", p5.loadImage(`assets/${chess.getPieceName(Chess.PIECES.BLACK_BISHOP)}.svg`));
-		pieceToImageMap.set("wR", p5.loadImage(`assets/${chess.getPieceName(Chess.PIECES.WHITE_ROOK)}.svg`));
-		pieceToImageMap.set("bR", p5.loadImage(`assets/${chess.getPieceName(Chess.PIECES.BLACK_ROOK)}.svg`));
-		pieceToImageMap.set("wQ", p5.loadImage(`assets/${chess.getPieceName(Chess.PIECES.WHITE_QUEEN)}.svg`));
-		pieceToImageMap.set("bQ", p5.loadImage(`assets/${chess.getPieceName(Chess.PIECES.BLACK_QUEEN)}.svg`));
-		pieceToImageMap.set("wN", p5.loadImage(`assets/${chess.getPieceName(Chess.PIECES.WHITE_KNIGHT)}.svg`));
-		pieceToImageMap.set("bN", p5.loadImage(`assets/${chess.getPieceName(Chess.PIECES.BLACK_KNIGHT)}.svg`));
+		pieceToImageMap.set("wP", p5.loadImage(wP));
+		pieceToImageMap.set("bP", p5.loadImage(bP));
+		pieceToImageMap.set("wK", p5.loadImage(wK));
+		pieceToImageMap.set("bK", p5.loadImage(bK));
+		pieceToImageMap.set("wB", p5.loadImage(wB));
+		pieceToImageMap.set("bB", p5.loadImage(bB));
+		pieceToImageMap.set("wR", p5.loadImage(wR));
+		pieceToImageMap.set("bR", p5.loadImage(bR));
+		pieceToImageMap.set("wQ", p5.loadImage(wQ));
+		pieceToImageMap.set("bQ", p5.loadImage(bQ));
+		pieceToImageMap.set("wN", p5.loadImage(wN));
+		pieceToImageMap.set("bN", p5.loadImage(bN));
 		
 		// Load audio files
-		moveSound = p5.loadSound("assets/move.mp3");
-		captureSound = p5.loadSound("assets/capture.mp3");
+		moveSound = p5.loadSound(moveSoundFile);
+		captureSound = p5.loadSound(captureSoundFile);
 	};
 
 	p5.setup = () => {
