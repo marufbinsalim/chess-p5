@@ -12,6 +12,7 @@ export function handleMouseClick(p5: P5, state: GameState): void {
             const idx = state.pendingPromotion.toX + state.pendingPromotion.toY * 8;
             state.chess.board[idx] = selectedPiece;
             state.pendingPromotion = null;
+            state.chess.whiteTurn = !state.chess.whiteTurn; // Toggle turn after promotion is completed
         }
         return;
     }

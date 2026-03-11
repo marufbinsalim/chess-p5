@@ -276,7 +276,13 @@ export class Chess {
         piece && this._updateEnPassant(piece, fromX, fromY, toX, toY);
         piece && capturedPiece && this._updateClocks(piece, capturedPiece);
 
-        this.whiteTurn = !this.whiteTurn;
+        // Don't toggle turn when it's a promotion move (we'll toggle when promotion is completed)
+        const isPromotion =
+            (piece === PIECES.WHITE_PAWN && toY === 7) ||
+            (piece === PIECES.BLACK_PAWN && toY === 0);
+        if (!isPromotion) {
+            this.whiteTurn = !this.whiteTurn;
+        }
     }
 
     private _updateCastlingRights(piece: number, fromX: number, fromY: number, toX: number, toY: number): void {

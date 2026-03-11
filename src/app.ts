@@ -95,9 +95,7 @@ const sketch = (p5: P5) => {
         }
 
         drawAnimatedPieces(p5, state);
-
-      
-
+		
         drawTurnIndicator(p5, colorUtil, state);
         drawCapturedPieces(p5, colorUtil, state, xOffset, yOffset, SQUARE_SIZE);
         drawGameStatus(p5, colorUtil, state);
