@@ -117,12 +117,14 @@ export class Chess {
     getPieceMoves(x: number, y: number, piece: number, includeInvalid: boolean = true, isAttackCheck: boolean = false): Array<{
         x: number; 
         y: number; 
-        secondary?: {fromX: number; fromY: number; toX: number; toY: number} | undefined
+        secondary?: {fromX: number; fromY: number; toX: number; toY: number} | undefined;
+        promotion?: boolean;
     }> {
         const moves: Array<{
             x: number; 
             y: number; 
-            secondary?: {fromX: number; fromY: number; toX: number; toY: number} | undefined
+            secondary?: {fromX: number; fromY: number; toX: number; toY: number} | undefined;
+            promotion?: boolean;
         }> = [];
         const isWhite = this.isWhite(piece);
         if(this.whiteTurn && !isWhite) return moves;
@@ -163,14 +165,23 @@ export class Chess {
         return moves.filter(move => this.isMoveValid(x, y, move.x, move.y, move.secondary));
     }
 
-    addPawnMoves(x: number, y: number, isWhite: boolean, moves: any[]): void {
+    addPawnMoves(x: number, y: number, isWhite: boolean, moves: Array<{
+        x: number; 
+        y: number; 
+        secondary?: {fromX: number; fromY: number; toX: number; toY: number} | undefined;
+        promotion?: boolean;
+    }>): void {
         const direction = isWhite ? 1 : -1;
         const startRow = isWhite ? 1 : 6;
         const promotionRow = isWhite ? 7 : 0;
 
         // Forward move
         if (this.canMoveTo(x, y + direction, isWhite) && !this.isSquareOccupied(x, y + direction)) {
-            moves.push({ x, y: y + direction });
+            const move: any = { x, y: y + direction };
+            if (y + direction === promotionRow) {
+                move.promotion = true;
+            }
+            moves.push(move);
             // Double move from start
             if (y === startRow && !this.isSquareOccupied(x, y + 2 * direction) && this.canMoveTo(x, y + 2 * direction, isWhite)) {
                 moves.push({ x, y: y + 2 * direction });
@@ -184,11 +195,19 @@ export class Chess {
             if (this.isValidPosition(newX, newY)) {
                 // Regular capture
                 if (this.isSquareOccupied(newX, newY) && this.canMoveTo(newX, newY, isWhite)) {
-                    moves.push({ x: newX, y: newY });
+                    const move: any = { x: newX, y: newY };
+                    if (newY === promotionRow) {
+                        move.promotion = true;
+                    }
+                    moves.push(move);
                 }
                 // En passant
                 if (this.enPassantTarget && this.enPassantTarget.x === newX && this.enPassantTarget.y === newY) {
-                    moves.push({ x: newX, y: newY });
+                    const move: any = { x: newX, y: newY };
+                    if (newY === promotionRow) {
+                        move.promotion = true;
+                    }
+                    moves.push(move);
                 }
             }
         }
@@ -368,7 +387,8 @@ export class Chess {
     getAvailableMoves(x: number, y: number): Array<{
         x: number; 
         y: number; 
-        secondary?: {fromX: number; fromY: number; toX: number; toY: number} | undefined
+        secondary?: {fromX: number; fromY: number; toX: number; toY: number} | undefined;
+        promotion?: boolean;
     }> {
         const piece = this.getPieceAt(x, y);
         if (piece === Chess.PIECES.EMPTY) {
@@ -377,14 +397,22 @@ export class Chess {
         return this.getPieceMoves(x, y, piece, false);
     }
 
-    // Move a piece from (fromX, fromY) to (toX, toY), with optional secondary move
-    movePiece(fromX: number, fromY: number, toX: number, toY: number, secondary?: {fromX: number, fromY: number, toX: number, toY: number}) {
+    // Move a piece from (fromX, fromY) to (toX, toY), with optional secondary move and promotion piece
+    movePiece(fromX: number, fromY: number, toX: number, toY: number, secondary?: {fromX: number, fromY: number, toX: number, toY: number}, promotionPiece?: number) {
         const piece = this.board[fromX + fromY * 8];
         const capturedPiece = this.board[toX + toY * 8];
         
         if (piece !== undefined) {
             this.board[fromX + fromY * 8] = Chess.PIECES.EMPTY;
-            this.board[toX + toY * 8] = piece;
+            
+            // Handle pawn promotion
+            if ((piece === Chess.PIECES.WHITE_PAWN && toY === 7) || (piece === Chess.PIECES.BLACK_PAWN && toY === 0)) {
+                // Default to queen if no promotion piece specified
+                const promotedPiece = promotionPiece || (piece === Chess.PIECES.WHITE_PAWN ? Chess.PIECES.WHITE_QUEEN : Chess.PIECES.BLACK_QUEEN);
+                this.board[toX + toY * 8] = promotedPiece;
+            } else {
+                this.board[toX + toY * 8] = piece;
+            }
         }
         
         // Handle secondary move if present (e.g., rook move during castling)
