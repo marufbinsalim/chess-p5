@@ -35,7 +35,7 @@ const sketch = (p5: P5) => {
 		let isDarkSquare = false;
 		for (let i = 0; i < SQUARE_UNIT; i++) {
 			for (let j = 0; j < SQUARE_UNIT; j++) {
-				p5.fill(isDarkSquare ? colorUtil.hexToRGBColor("#2caf8e") : colorUtil.hexToRGBColor("#ffffff"));
+				p5.fill(isDarkSquare ? colorUtil.hexToRGBColor("#b17b58") : colorUtil.hexToRGBColor("#ffffff"));
 				p5.rect(xOffset +  i * SQUARE_SIZE, yOffset +  j * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE);
 				const pieceImage = pieceToImageMap.get(chess.getPiece(i, j));
 				if(pieceImage) {
