@@ -43,7 +43,6 @@ const sketch = (p5: P5) => {
         availableMoves: [],
         animatedPieces: [],
         pendingPromotion: null,
-        targetOrientation: false,
     } as unknown as GameState;
 
     // ── Canvas setup ──────────────────────────────────────────────────────────
