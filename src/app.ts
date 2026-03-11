@@ -20,7 +20,7 @@ import bN from "../assets/bN.svg";
 import moveSoundFile from "../assets/move.mp3";
 import captureSoundFile from "../assets/capture.mp3";
 
-const sketch = (p5: P5) => {
+	const sketch = (p5: P5) => {
 	let canvas: P5.Renderer;
 	const chess = new Chess();
 	let colorUtil: ColorUtil = new ColorUtil(p5);
@@ -39,6 +39,63 @@ const sketch = (p5: P5) => {
 		progress: number,
 		piece: string
 	}> = [];
+
+	// Board spin animation state
+	let spinAnimationProgress: number = 0; // 0 = no spin, 1 = completed spin
+	let isSpinning: boolean = false;
+	let targetOrientation: boolean = false; // Target orientation after spin
+
+	// Get current board orientation (true = white's perspective, false = black's perspective)
+	const getIsBoardReversed = (): boolean => {
+		return chess.getWhiteTurn();
+	};
+
+	// Start board spin animation
+	const startSpinAnimation = () => {
+		isSpinning = true;
+		spinAnimationProgress = 0;
+		targetOrientation = getIsBoardReversed();
+	};
+
+	// Update spin animation
+	const updateSpinAnimation = () => {
+		if (isSpinning) {
+			spinAnimationProgress += 0.05;
+			if (spinAnimationProgress >= 1) {
+				spinAnimationProgress = 1;
+				isSpinning = false;
+			}
+		}
+	};
+
+	// Calculate current orientation based on spin progress
+	const getCurrentOrientation = (): boolean => {
+		// If not spinning, use actual orientation
+		if (!isSpinning) {
+			return getIsBoardReversed();
+		}
+		// During spin, use target orientation
+		return targetOrientation;
+	};
+
+	// Translate board coordinates based on current orientation (including spin state)
+	const translateBoardCoords = (x: number, y: number): { x: number; y: number } => {
+		if (getCurrentOrientation()) {
+			return {
+				x: 7 - x,
+				y: 7 - y
+			};
+		}
+		return { x, y };
+	};
+
+	// Translate screen coordinates to board coordinates based on orientation
+	const screenToBoardCoords = (screenX: number, screenY: number, xOffset: number, yOffset: number, squareSize: number): { x: number; y: number } => {
+		let boardX = Math.floor((screenX - xOffset) / squareSize);
+		let boardY = Math.floor((screenY - yOffset) / squareSize);
+		
+		return translateBoardCoords(boardX, boardY);
+	};
 
 	let pendingPromotion: { fromX: number; fromY: number; toX: number; toY: number } | null = null;
 	let moveSound: P5.SoundFile;
@@ -60,14 +117,31 @@ const sketch = (p5: P5) => {
 		const xOffset = (window.innerWidth - totalWidth) / 2;
 		const yOffset = (window.innerHeight - totalWidth) / 2;
 
+		// Apply spin transformation
+		if (isSpinning) {
+			p5.push();
+			const centerX = xOffset + totalWidth / 2;
+			const centerY = yOffset + totalWidth / 2;
+			p5.translate(centerX, centerY);
+			
+			// Calculate spin angle (smooth easing)
+			const easeProgress = 1 - Math.pow(1 - spinAnimationProgress, 3); // Ease out cubic
+			const spinAngle = easeProgress * Math.PI; // 180 degrees spin
+			p5.rotate(spinAngle);
+			
+			p5.translate(-centerX, -centerY);
+		}
+
 		let isDarkSquare = false;
 		for (let i = 0; i < SQUARE_UNIT; i++) {
 			for (let j = 0; j < SQUARE_UNIT; j++) {
+				const { x: boardX, y: boardY } = translateBoardCoords(i, j);
+				
 				p5.fill(isDarkSquare ? colorUtil.hexToRGBColor("#b17b58") : colorUtil.hexToRGBColor("#ffffff"));
 				p5.rect(xOffset + i * SQUARE_SIZE, yOffset + j * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE);
 
-				const pieceImage = pieceToImageMap.get(chess.getPiece(i, j));
-				const isAnimated = animatedPieces.some(anim => anim.fromX === i && anim.fromY === j);
+				const pieceImage = pieceToImageMap.get(chess.getPiece(boardX, boardY));
+				const isAnimated = animatedPieces.some(anim => anim.fromX === boardX && anim.fromY === boardY);
 				if (pieceImage && !isAnimated) {
 					p5.image(pieceImage, xOffset + i * SQUARE_SIZE, yOffset + j * SQUARE_SIZE, SQUARE_SIZE * 0.9, SQUARE_SIZE * 0.9);
 				}
@@ -81,9 +155,10 @@ const sketch = (p5: P5) => {
 		if (selectedPiece) {
 			p5.fill(0, 100, 0, 100);
 			for (const move of availableMoves) {
+				const { x: displayX, y: displayY } = translateBoardCoords(move.x, move.y);
 				p5.ellipse(
-					xOffset + move.x * SQUARE_SIZE + SQUARE_SIZE / 2,
-					yOffset + move.y * SQUARE_SIZE + SQUARE_SIZE / 2,
+					xOffset + displayX * SQUARE_SIZE + SQUARE_SIZE / 2,
+					yOffset + displayY * SQUARE_SIZE + SQUARE_SIZE / 2,
 					SQUARE_SIZE * 0.4
 				);
 			}
@@ -98,8 +173,11 @@ const sketch = (p5: P5) => {
 		for (const animatedPiece of animatedPieces) {
 			const pieceImage = pieceToImageMap.get(animatedPiece.piece);
 			if (pieceImage) {
-				const currentX = xOffset + (animatedPiece.fromX + (animatedPiece.toX - animatedPiece.fromX) * animatedPiece.progress) * SQUARE_SIZE;
-				const currentY = yOffset + (animatedPiece.fromY + (animatedPiece.toY - animatedPiece.fromY) * animatedPiece.progress) * SQUARE_SIZE;
+				const { x: fromDisplayX, y: fromDisplayY } = translateBoardCoords(animatedPiece.fromX, animatedPiece.fromY);
+				const { x: toDisplayX, y: toDisplayY } = translateBoardCoords(animatedPiece.toX, animatedPiece.toY);
+				
+				const currentX = xOffset + (fromDisplayX + (toDisplayX - fromDisplayX) * animatedPiece.progress) * SQUARE_SIZE;
+				const currentY = yOffset + (fromDisplayY + (toDisplayY - fromDisplayY) * animatedPiece.progress) * SQUARE_SIZE;
 				p5.image(pieceImage, currentX, currentY, SQUARE_SIZE * 0.9, SQUARE_SIZE * 0.9);
 			}
 		}
@@ -111,6 +189,7 @@ const sketch = (p5: P5) => {
 	}
 
 	function drawTurnIndicator() {
+		if(isSpinning) return;
 		const turnText = chess.getWhiteTurn() ? "White's Turn" : "Black's Turn";
 
 		p5.fill(colorUtil.hexToRGBColor("#dbdbdb"));
@@ -127,6 +206,7 @@ const sketch = (p5: P5) => {
 	}
 
 	function drawCapturedPieces(xOffset: number, yOffset: number, SQUARE_SIZE: number) {
+		if(isSpinning) return;
 		// Draw white captured pieces (bottom of the board)
 		p5.fill(colorUtil.hexToRGBColor("#dbdbdb"));
 		p5.rect(xOffset, yOffset + 8 * SQUARE_SIZE, 8 * SQUARE_SIZE, SQUARE_SIZE * 0.8);
@@ -157,6 +237,7 @@ const sketch = (p5: P5) => {
 	}
 
 	function drawGameStatus() {
+		if(isSpinning) return;
 		let statusText = "";
 		let textColor = colorUtil.hexToRGBColor("#000000");
 
@@ -203,24 +284,25 @@ const sketch = (p5: P5) => {
 			? [Chess.PIECES.WHITE_QUEEN, Chess.PIECES.WHITE_ROOK, Chess.PIECES.WHITE_BISHOP, Chess.PIECES.WHITE_KNIGHT]
 			: [Chess.PIECES.BLACK_QUEEN, Chess.PIECES.BLACK_ROOK, Chess.PIECES.BLACK_BISHOP, Chess.PIECES.BLACK_KNIGHT];
 
-		// Position promotion UI inside the board bounds
-		let promotionX = xOffset + promotion.toX * SQUARE_SIZE;
-		let promotionY = yOffset + promotion.toY * SQUARE_SIZE;
+		// Position promotion UI inside the board bounds - translate to display coordinates
+		const { x: displayToX, y: displayToY } = translateBoardCoords(promotion.toX, promotion.toY);
+		let promotionX = xOffset + displayToX * SQUARE_SIZE;
+		let promotionY = yOffset + displayToY * SQUARE_SIZE;
 
 		// Adjust promotion UI position to stay within board
 		if (isWhite) {
 			// White pawn promotion (at top), show UI below
-			if (promotion.toY + 3 > 7) {
-				promotionY = yOffset + (promotion.toY - 3) * SQUARE_SIZE;
+			if (displayToY + 3 > 7) {
+				promotionY = yOffset + (displayToY - 3) * SQUARE_SIZE;
 			} else {
-				promotionY = yOffset + (promotion.toY + 1) * SQUARE_SIZE;
+				promotionY = yOffset + (displayToY + 1) * SQUARE_SIZE;
 			}
 		} else {
 			// Black pawn promotion (at bottom), show UI above
-			if (promotion.toY - 3 < 0) {
-				promotionY = yOffset + (promotion.toY + 1) * SQUARE_SIZE;
+			if (displayToY - 3 < 0) {
+				promotionY = yOffset + (displayToY + 1) * SQUARE_SIZE;
 			} else {
-				promotionY = yOffset + (promotion.toY - 3) * SQUARE_SIZE;
+				promotionY = yOffset + (displayToY - 3) * SQUARE_SIZE;
 			}
 		}
 
@@ -256,24 +338,25 @@ const sketch = (p5: P5) => {
 			? [Chess.PIECES.WHITE_QUEEN, Chess.PIECES.WHITE_ROOK, Chess.PIECES.WHITE_BISHOP, Chess.PIECES.WHITE_KNIGHT]
 			: [Chess.PIECES.BLACK_QUEEN, Chess.PIECES.BLACK_ROOK, Chess.PIECES.BLACK_BISHOP, Chess.PIECES.BLACK_KNIGHT];
 
-		// Position promotion UI inside the board bounds
-		let promotionX = xOffset + pendingPromotion.toX * SQUARE_SIZE;
-		let promotionY = yOffset + pendingPromotion.toY * SQUARE_SIZE;
+		// Position promotion UI inside the board bounds - translate to display coordinates
+		const { x: displayToX, y: displayToY } = translateBoardCoords(pendingPromotion.toX, pendingPromotion.toY);
+		let promotionX = xOffset + displayToX * SQUARE_SIZE;
+		let promotionY = yOffset + displayToY * SQUARE_SIZE;
 
 		// Adjust promotion UI position to stay within board
 		if (isWhite) {
 			// White pawn promotion (at top), show UI below
-			if (pendingPromotion.toY + 3 > 7) {
-				promotionY = yOffset + (pendingPromotion.toY - 3) * SQUARE_SIZE;
+			if (displayToY + 3 > 7) {
+				promotionY = yOffset + (displayToY - 3) * SQUARE_SIZE;
 			} else {
-				promotionY = yOffset + (pendingPromotion.toY + 1) * SQUARE_SIZE;
+				promotionY = yOffset + (displayToY + 1) * SQUARE_SIZE;
 			}
 		} else {
 			// Black pawn promotion (at bottom), show UI above
-			if (pendingPromotion.toY - 3 < 0) {
-				promotionY = yOffset + (pendingPromotion.toY + 1) * SQUARE_SIZE;
+			if (displayToY - 3 < 0) {
+				promotionY = yOffset + (displayToY + 1) * SQUARE_SIZE;
 			} else {
-				promotionY = yOffset + (pendingPromotion.toY - 3) * SQUARE_SIZE;
+				promotionY = yOffset + (displayToY - 3) * SQUARE_SIZE;
 			}
 		}
 
@@ -334,7 +417,16 @@ const sketch = (p5: P5) => {
 
 	p5.draw = () => {
 		p5.background(colorUtil.hexToRGBColor("#dbdbdb"));
+		
+		// Update spin animation
+		updateSpinAnimation();
+		
 		setupChessBoard();
+
+		// Pop spin transformation if active
+		if (isSpinning) {
+			p5.pop();
+		}
 
 		// Update animations
 		if (animatedPieces.length > 0) {
@@ -389,6 +481,9 @@ const sketch = (p5: P5) => {
 				animatedPieces = [];
 				selectedPiece = null;
 				availableMoves = [];
+				
+				// Start spin animation for board reversal
+				startSpinAnimation();
 			}
 		}
 	};
@@ -406,8 +501,7 @@ const sketch = (p5: P5) => {
 		const xOffset = (window.innerWidth - totalWidth) / 2;
 		const yOffset = (window.innerHeight - totalWidth) / 2;
 
-		const boardX = Math.floor((p5.mouseX - xOffset) / SQUARE_SIZE);
-		const boardY = Math.floor((p5.mouseY - yOffset) / SQUARE_SIZE);
+		const { x: boardX, y: boardY } = screenToBoardCoords(p5.mouseX, p5.mouseY, xOffset, yOffset, SQUARE_SIZE);
 
 		// Check if click is on the chess board
 		if (boardX >= 0 && boardX < 8 && boardY >= 0 && boardY < 8) {
