@@ -25,6 +25,8 @@ const sketch = (p5: P5) => {
 	}> = [];
 	
 	let pendingPromotion: {fromX: number; fromY: number; toX: number; toY: number} | null = null;
+	let moveSound: P5.SoundFile;
+	let captureSound: P5.SoundFile;
 
 	function setupCanvas() {
 		if (!canvas) canvas = p5.createCanvas(p5.windowWidth, p5.windowHeight);
@@ -213,6 +215,10 @@ const sketch = (p5: P5) => {
 		pieceToImageMap.set("bQ", p5.loadImage(`assets/${chess.getPieceName(Chess.PIECES.BLACK_QUEEN)}.svg`));
 		pieceToImageMap.set("wN", p5.loadImage(`assets/${chess.getPieceName(Chess.PIECES.WHITE_KNIGHT)}.svg`));
 		pieceToImageMap.set("bN", p5.loadImage(`assets/${chess.getPieceName(Chess.PIECES.BLACK_KNIGHT)}.svg`));
+		
+		// Load audio files
+		moveSound = p5.loadSound("assets/move.mp3");
+		captureSound = p5.loadSound("assets/capture.mp3");
 	};
 
 	p5.setup = () => {
@@ -314,6 +320,19 @@ const sketch = (p5: P5) => {
 				const selectedMove = availableMoves.find(move => move.x === boardX && move.y === boardY);
 				
 				if (selectedMove) {
+					// Determine if this move is a capture
+					const isCapture = chess.getPiece(selectedMove.x, selectedMove.y) !== "EMPTY";
+					const isEnPassant = chess.enPassantTarget && 
+						selectedMove.x === chess.enPassantTarget.x && 
+						selectedMove.y === chess.enPassantTarget.y;
+					
+					// Play appropriate sound
+					if (isCapture || isEnPassant) {
+						captureSound.play();
+					} else {
+						moveSound.play();
+					}
+					
 					// Check if this is a promotion move
 					if (selectedMove.promotion) {
 						// Immediately move the pawn to the promotion square (will become queen temporarily)
