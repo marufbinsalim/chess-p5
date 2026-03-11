@@ -9,6 +9,19 @@ export class Chess {
     enPassantTarget: { x: number; y: number } | null = null;
     halfMoveClock = 0;
     fullMoveNumber = 1;
+    capturedWhitePieces: number[] = [];
+    capturedBlackPieces: number[] = [];
+
+    // Getters for captured pieces
+    getCapturedWhitePieces(): number[] {
+        return [...this.capturedWhitePieces];
+    }
+
+    getCapturedBlackPieces(): number[] {
+        return [...this.capturedBlackPieces];
+    }
+    whiteTurn: boolean = true;
+
 
     static PIECES = {
         EMPTY: 0,
@@ -28,7 +41,11 @@ export class Chess {
         BLACK_KING: 12
     }
 
-    private whiteTurn: boolean = true;
+
+    // Getter for whiteTurn to make it accessible from outside
+    getWhiteTurn(): boolean {
+        return this.whiteTurn;
+    }
 
     constructor() {
         this.resetBoard();
@@ -161,7 +178,7 @@ export class Chess {
             return moves;
         }
 
-        // Filter out moves that put own king in check
+        // Filter out moves that put own king in check or leave king in check when already in check
         return moves.filter(move => this.isMoveValid(x, y, move.x, move.y, move.secondary));
     }
 
@@ -402,6 +419,15 @@ export class Chess {
         const piece = this.board[fromX + fromY * 8];
         const capturedPiece = this.board[toX + toY * 8];
         
+        // Track captured piece
+        if (capturedPiece !== undefined && capturedPiece !== Chess.PIECES.EMPTY) {
+            if (this.isWhite(capturedPiece)) {
+                this.capturedWhitePieces.push(capturedPiece);
+            } else {
+                this.capturedBlackPieces.push(capturedPiece);
+            }
+        }
+        
         if (piece !== undefined) {
             this.board[fromX + fromY * 8] = Chess.PIECES.EMPTY;
             
@@ -476,8 +502,114 @@ export class Chess {
         this.whiteTurn = !this.whiteTurn;
     }
 
+    // Check if the current player is in checkmate
+    isCheckmate(): boolean {
+        const isWhiteTurn = this.whiteTurn;
+        
+        // If not in check, cannot be checkmate
+        if (!this.isInCheck(isWhiteTurn)) {
+            return false;
+        }
+        
+        // Check if any piece has valid moves that get king out of check
+        for (let y = 0; y < 8; y++) {
+            for (let x = 0; x < 8; x++) {
+                const piece = this.getPieceAt(x, y);
+                if ((isWhiteTurn && this.isWhite(piece)) || (!isWhiteTurn && this.isBlack(piece))) {
+                    const moves = this.getAvailableMoves(x, y);
+                    if (moves.length > 0) {
+                        return false;
+                    }
+                }
+            }
+        }
+        
+        return true;
+    }
+
+    // Check if the current position is a draw
+    isDraw(): boolean {
+        // 50-move rule
+        if (this.halfMoveClock >= 100) {
+            return true;
+        }
+        
+        // Check for insufficient material
+        const whitePieces = [];
+        const blackPieces = [];
+        
+        for (let y = 0; y < 8; y++) {
+            for (let x = 0; x < 8; x++) {
+                const piece = this.getPieceAt(x, y);
+                if (piece !== Chess.PIECES.EMPTY) {
+                    if (this.isWhite(piece)) {
+                        whitePieces.push(piece);
+                    } else {
+                        blackPieces.push(piece);
+                    }
+                }
+            }
+        }
+        
+        // King vs King
+        if (whitePieces.length === 1 && blackPieces.length === 1) {
+            return true;
+        }
+        
+        // King + Bishop vs King
+        if ((whitePieces.length === 2 && whitePieces.includes(Chess.PIECES.WHITE_BISHOP) && !whitePieces.includes(Chess.PIECES.WHITE_PAWN)) &&
+            (blackPieces.length === 1)) {
+            return true;
+        }
+        
+        if ((blackPieces.length === 2 && blackPieces.includes(Chess.PIECES.BLACK_BISHOP) && !blackPieces.includes(Chess.PIECES.BLACK_PAWN)) &&
+            (whitePieces.length === 1)) {
+            return true;
+        }
+        
+        // King + Knight vs King
+        if ((whitePieces.length === 2 && whitePieces.includes(Chess.PIECES.WHITE_KNIGHT) && !whitePieces.includes(Chess.PIECES.WHITE_PAWN)) &&
+            (blackPieces.length === 1)) {
+            return true;
+        }
+        
+        if ((blackPieces.length === 2 && blackPieces.includes(Chess.PIECES.BLACK_KNIGHT) && !blackPieces.includes(Chess.PIECES.BLACK_PAWN)) &&
+            (whitePieces.length === 1)) {
+            return true;
+        }
+        
+        return false;
+    }
+
+    // Check if the current position is a stalemate (player not in check but has no valid moves)
+    isStalemate(): boolean {
+        const isWhiteTurn = this.whiteTurn;
+        
+        // If in check, not stalemate
+        if (this.isInCheck(isWhiteTurn)) {
+            return false;
+        }
+        
+        // Check if any piece has valid moves
+        for (let y = 0; y < 8; y++) {
+            for (let x = 0; x < 8; x++) {
+                const piece = this.getPieceAt(x, y);
+                if ((isWhiteTurn && this.isWhite(piece)) || (!isWhiteTurn && this.isBlack(piece))) {
+                    const moves = this.getAvailableMoves(x, y);
+                    if (moves.length > 0) {
+                        return false;
+                    }
+                }
+            }
+        }
+        
+        return true;
+    }
+
     resetBoard() {
         this.board = new Array(64).fill(Chess.PIECES.EMPTY);
+        this.capturedWhitePieces = [];
+        this.capturedBlackPieces = [];
         this.board[0] = Chess.PIECES.WHITE_ROOK
         this.board[1] = Chess.PIECES.WHITE_KNIGHT
         this.board[2] = Chess.PIECES.WHITE_BISHOP

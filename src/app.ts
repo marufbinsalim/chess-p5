@@ -26,11 +26,11 @@ const sketch = (p5: P5) => {
 	let colorUtil: ColorUtil = new ColorUtil(p5);
 
 	let pieceToImageMap = new Map<string, P5.Image>();
-	let selectedPiece: {x: number, y: number} | null = null;
+	let selectedPiece: { x: number, y: number } | null = null;
 	let availableMoves: Array<{
-		x: number; 
-		y: number; 
-		secondary?: {fromX: number; fromY: number; toX: number; toY: number} | undefined;
+		x: number;
+		y: number;
+		secondary?: { fromX: number; fromY: number; toX: number; toY: number } | undefined;
 		promotion?: boolean;
 	}> = [];
 	let animatedPieces: Array<{
@@ -39,8 +39,8 @@ const sketch = (p5: P5) => {
 		progress: number,
 		piece: string
 	}> = [];
-	
-	let pendingPromotion: {fromX: number; fromY: number; toX: number; toY: number} | null = null;
+
+	let pendingPromotion: { fromX: number; fromY: number; toX: number; toY: number } | null = null;
 	let moveSound: P5.SoundFile;
 	let captureSound: P5.SoundFile;
 
@@ -49,28 +49,29 @@ const sketch = (p5: P5) => {
 		canvas.parent("app");
 		p5.resizeCanvas(window.innerWidth, window.innerHeight);
 		p5.background(colorUtil.hexToRGBColor("#dbdbdb"));
+		p5.noStroke();
 		return canvas;
 	}
 
-		function setupChessBoard() {
+	function setupChessBoard() {
 		const SQUARE_UNIT = 8;
-		const SQUARE_SIZE = Math.min(window.innerWidth / SQUARE_UNIT, window.innerHeight / SQUARE_UNIT);
+		const SQUARE_SIZE = Math.min((window.innerWidth - 200) / SQUARE_UNIT, (window.innerHeight - 400) / SQUARE_UNIT);
 		const totalWidth = SQUARE_SIZE * SQUARE_UNIT;
 		const xOffset = (window.innerWidth - totalWidth) / 2;
 		const yOffset = (window.innerHeight - totalWidth) / 2;
-		
+
 		let isDarkSquare = false;
 		for (let i = 0; i < SQUARE_UNIT; i++) {
 			for (let j = 0; j < SQUARE_UNIT; j++) {
 				p5.fill(isDarkSquare ? colorUtil.hexToRGBColor("#b17b58") : colorUtil.hexToRGBColor("#ffffff"));
 				p5.rect(xOffset + i * SQUARE_SIZE, yOffset + j * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE);
-				
+
 				const pieceImage = pieceToImageMap.get(chess.getPiece(i, j));
 				const isAnimated = animatedPieces.some(anim => anim.fromX === i && anim.fromY === j);
 				if (pieceImage && !isAnimated) {
 					p5.image(pieceImage, xOffset + i * SQUARE_SIZE, yOffset + j * SQUARE_SIZE, SQUARE_SIZE * 0.9, SQUARE_SIZE * 0.9);
 				}
-				
+
 				isDarkSquare = !isDarkSquare;
 			}
 			isDarkSquare = !isDarkSquare;
@@ -92,7 +93,7 @@ const sketch = (p5: P5) => {
 		if (pendingPromotion) {
 			drawPromotionUI(pendingPromotion);
 		}
-		
+
 		// Draw animated pieces
 		for (const animatedPiece of animatedPieces) {
 			const pieceImage = pieceToImageMap.get(animatedPiece.piece);
@@ -102,25 +103,110 @@ const sketch = (p5: P5) => {
 				p5.image(pieceImage, currentX, currentY, SQUARE_SIZE * 0.9, SQUARE_SIZE * 0.9);
 			}
 		}
+
+		// Draw UI elements
+		drawTurnIndicator();
+		drawCapturedPieces(xOffset, yOffset, SQUARE_SIZE);
+		drawGameStatus();
 	}
-	
-	function drawPromotionUI(promotion: {fromX: number; fromY: number; toX: number; toY: number}) {
+
+	function drawTurnIndicator() {
+		const turnText = chess.getWhiteTurn() ? "White's Turn" : "Black's Turn";
+
+		p5.fill(colorUtil.hexToRGBColor("#dbdbdb"));
+		p5.rect(0, 0, p5.width, 100);
+
+		p5.textSize(50);
+		p5.textStyle(p5.BOLD);
+		p5.textFont("Courier");
+
+		p5.fill(colorUtil.hexToRGBColor("#000000"));
+		p5.textAlign(p5.CENTER, p5.CENTER);
+
+		p5.text(turnText, p5.width / 2, 50);
+	}
+
+	function drawCapturedPieces(xOffset: number, yOffset: number, SQUARE_SIZE: number) {
+		// Draw white captured pieces (bottom of the board)
+		p5.fill(colorUtil.hexToRGBColor("#dbdbdb"));
+		p5.rect(xOffset, yOffset + 8 * SQUARE_SIZE, 8 * SQUARE_SIZE, SQUARE_SIZE * 0.8);
+
+		let whiteCaptureX = xOffset + SQUARE_SIZE * 0.5;
+		for (const piece of chess.getCapturedWhitePieces()) {
+			const pieceName = chess.getPieceName(piece);
+			const pieceImage = pieceToImageMap.get(pieceName);
+			if (pieceImage) {
+				p5.image(pieceImage, whiteCaptureX, yOffset + 8 * SQUARE_SIZE + SQUARE_SIZE * 0.1, SQUARE_SIZE * 0.6, SQUARE_SIZE * 0.6);
+				whiteCaptureX += SQUARE_SIZE * 0.7;
+			}
+		}
+
+		// Draw black captured pieces (top of the board)
+		p5.fill(colorUtil.hexToRGBColor("#dbdbdb"));
+		p5.rect(xOffset, yOffset - SQUARE_SIZE * 0.8, 8 * SQUARE_SIZE, SQUARE_SIZE * 0.8);
+
+		let blackCaptureX = xOffset + SQUARE_SIZE * 0.5;
+		for (const piece of chess.getCapturedBlackPieces()) {
+			const pieceName = chess.getPieceName(piece);
+			const pieceImage = pieceToImageMap.get(pieceName);
+			if (pieceImage) {
+				p5.image(pieceImage, blackCaptureX, yOffset - SQUARE_SIZE * 0.7, SQUARE_SIZE * 0.6, SQUARE_SIZE * 0.6);
+				blackCaptureX += SQUARE_SIZE * 0.7;
+			}
+		}
+	}
+
+	function drawGameStatus() {
+		let statusText = "";
+		let textColor = colorUtil.hexToRGBColor("#000000");
+
+		if (chess.isCheckmate()) {
+			statusText = chess.getWhiteTurn()
+				? "Black wins by checkmate!"
+				: "White wins by checkmate!";
+			textColor = colorUtil.hexToRGBColor("#ff0000");
+		} else if (chess.isStalemate()) {
+			statusText = "Stalemate!";
+			textColor = colorUtil.hexToRGBColor("#ff8800");
+		} else if (chess.isDraw()) {
+			statusText = "Draw!";
+			textColor = colorUtil.hexToRGBColor("#ff8800");
+		} else if (chess.isInCheck(chess.getWhiteTurn())) {
+			statusText = "Check!";
+			textColor = colorUtil.hexToRGBColor("#ff0000");
+		}
+
+		if (!statusText) return;
+
+		p5.fill(colorUtil.hexToRGBColor("#dbdbdb"));
+		p5.rect(0, 0, p5.width, 100);
+
+		p5.textSize(50);
+		p5.textStyle(p5.BOLD);
+		p5.textFont("Courier");
+
+		p5.fill(textColor);
+		p5.textAlign(p5.CENTER, p5.CENTER);
+
+		p5.text(statusText, p5.width / 2, 50);
+	}
+	function drawPromotionUI(promotion: { fromX: number; fromY: number; toX: number; toY: number }) {
 		const SQUARE_UNIT = 8;
-		const SQUARE_SIZE = Math.min(window.innerWidth / SQUARE_UNIT, window.innerHeight / SQUARE_UNIT);
+		const SQUARE_SIZE = Math.min((window.innerWidth - 200) / SQUARE_UNIT, (window.innerHeight - 400) / SQUARE_UNIT);
 		const totalWidth = SQUARE_SIZE * SQUARE_UNIT;
 		const xOffset = (window.innerWidth - totalWidth) / 2;
 		const yOffset = (window.innerHeight - totalWidth) / 2;
-		
+
 		// Determine promotion type based on where the pawn moved (white pawn moves to y=7, black to y=0)
 		const isWhite = promotion.toY === 7;
-		const promotionPieces = isWhite 
+		const promotionPieces = isWhite
 			? [Chess.PIECES.WHITE_QUEEN, Chess.PIECES.WHITE_ROOK, Chess.PIECES.WHITE_BISHOP, Chess.PIECES.WHITE_KNIGHT]
 			: [Chess.PIECES.BLACK_QUEEN, Chess.PIECES.BLACK_ROOK, Chess.PIECES.BLACK_BISHOP, Chess.PIECES.BLACK_KNIGHT];
-		
+
 		// Position promotion UI inside the board bounds
 		let promotionX = xOffset + promotion.toX * SQUARE_SIZE;
 		let promotionY = yOffset + promotion.toY * SQUARE_SIZE;
-		
+
 		// Adjust promotion UI position to stay within board
 		if (isWhite) {
 			// White pawn promotion (at top), show UI below
@@ -137,13 +223,13 @@ const sketch = (p5: P5) => {
 				promotionY = yOffset + (promotion.toY - 3) * SQUARE_SIZE;
 			}
 		}
-		
+
 		// Draw promotion background
 		p5.fill(colorUtil.hexToRGBColor("#dbdbdb"));
 		p5.stroke(0);
 		p5.strokeWeight(2);
 		p5.rect(promotionX, promotionY, SQUARE_SIZE, SQUARE_SIZE * 4);
-		
+
 		// Draw promotion pieces
 		for (let i = 0; i < promotionPieces.length; i++) {
 			const piece = promotionPieces[i];
@@ -154,26 +240,26 @@ const sketch = (p5: P5) => {
 			}
 		}
 	}
-	
+
 	function handlePromotionClick(boardX: number, boardY: number) {
 		if (!pendingPromotion) return false;
-		
+
 		const SQUARE_UNIT = 8;
-		const SQUARE_SIZE = Math.min(window.innerWidth / SQUARE_UNIT, window.innerHeight / SQUARE_UNIT);
+		const SQUARE_SIZE = Math.min((window.innerWidth - 200) / SQUARE_UNIT, (window.innerHeight - 400) / SQUARE_UNIT);
 		const totalWidth = SQUARE_SIZE * SQUARE_UNIT;
 		const xOffset = (window.innerWidth - totalWidth) / 2;
 		const yOffset = (window.innerHeight - totalWidth) / 2;
-		
+
 		// Determine promotion type based on where the pawn moved (white pawn moves to y=7, black to y=0)
 		const isWhite = pendingPromotion.toY === 7;
-		const promotionPieces = isWhite 
+		const promotionPieces = isWhite
 			? [Chess.PIECES.WHITE_QUEEN, Chess.PIECES.WHITE_ROOK, Chess.PIECES.WHITE_BISHOP, Chess.PIECES.WHITE_KNIGHT]
 			: [Chess.PIECES.BLACK_QUEEN, Chess.PIECES.BLACK_ROOK, Chess.PIECES.BLACK_BISHOP, Chess.PIECES.BLACK_KNIGHT];
-		
+
 		// Position promotion UI inside the board bounds
 		let promotionX = xOffset + pendingPromotion.toX * SQUARE_SIZE;
 		let promotionY = yOffset + pendingPromotion.toY * SQUARE_SIZE;
-		
+
 		// Adjust promotion UI position to stay within board
 		if (isWhite) {
 			// White pawn promotion (at top), show UI below
@@ -190,31 +276,31 @@ const sketch = (p5: P5) => {
 				promotionY = yOffset + (pendingPromotion.toY - 3) * SQUARE_SIZE;
 			}
 		}
-		
+
 		// Check if click is on promotion UI
 		for (let i = 0; i < promotionPieces.length; i++) {
 			const pieceY = promotionY + i * SQUARE_SIZE;
 			const pieceX = promotionX;
-			
+
 			const mouseX = p5.mouseX;
 			const mouseY = p5.mouseY;
-			
+
 			if (mouseX >= pieceX && mouseX <= pieceX + SQUARE_SIZE &&
-			    mouseY >= pieceY && mouseY <= pieceY + SQUARE_SIZE) {
+				mouseY >= pieceY && mouseY <= pieceY + SQUARE_SIZE) {
 				// Select promotion piece
 				const selectedPieceType = promotionPieces[i];
-				
+
 				// Replace the temporary queen with the selected promotion piece
 				const index = pendingPromotion.toX + pendingPromotion.toY * 8;
 				if (selectedPieceType !== undefined) {
 					chess.board[index] = selectedPieceType;
 				}
-				
+
 				pendingPromotion = null;
 				return true;
 			}
 		}
-		
+
 		return false;
 	}
 
@@ -231,7 +317,7 @@ const sketch = (p5: P5) => {
 		pieceToImageMap.set("bQ", p5.loadImage(bQ));
 		pieceToImageMap.set("wN", p5.loadImage(wN));
 		pieceToImageMap.set("bN", p5.loadImage(bN));
-		
+
 		// Load audio files
 		moveSound = p5.loadSound(moveSoundFile);
 		captureSound = p5.loadSound(captureSoundFile);
@@ -253,7 +339,7 @@ const sketch = (p5: P5) => {
 		// Update animations
 		if (animatedPieces.length > 0) {
 			let allAnimationsComplete = true;
-			
+
 			for (const animatedPiece of animatedPieces) {
 				animatedPiece.progress += 0.05;
 				if (animatedPiece.progress < 1) {
@@ -265,15 +351,15 @@ const sketch = (p5: P5) => {
 				// All animations completed, finalize moves
 				// For castling, we have two animated pieces: king and rook
 				// We need to call movePiece once with the secondary move
-				
+
 				// Find if there's a main piece with secondary move (castling)
 				let hasSecondaryMove = false;
 				for (const animatedPiece of animatedPieces) {
 					// Check if this piece has a corresponding secondary move in availableMoves
-					const matchingMove = availableMoves.find(move => 
+					const matchingMove = availableMoves.find(move =>
 						move.x === animatedPiece.toX && move.y === animatedPiece.toY
 					);
-					
+
 					if (matchingMove && matchingMove.secondary) {
 						// Handle main piece with secondary move (castling)
 						chess.movePiece(
@@ -287,7 +373,7 @@ const sketch = (p5: P5) => {
 						break;
 					}
 				}
-				
+
 				// If no secondary move (regular move), handle all animated pieces
 				if (!hasSecondaryMove) {
 					for (const animatedPiece of animatedPieces) {
@@ -299,7 +385,7 @@ const sketch = (p5: P5) => {
 						);
 					}
 				}
-				
+
 				animatedPieces = [];
 				selectedPiece = null;
 				availableMoves = [];
@@ -313,9 +399,9 @@ const sketch = (p5: P5) => {
 			const handled = handlePromotionClick(0, 0);
 			if (handled) return;
 		}
-		
+
 		const SQUARE_UNIT = 8;
-		const SQUARE_SIZE = Math.min(window.innerWidth / SQUARE_UNIT, window.innerHeight / SQUARE_UNIT);
+		const SQUARE_SIZE = Math.min((window.innerWidth - 200) / SQUARE_UNIT, (window.innerHeight - 400) / SQUARE_UNIT);
 		const totalWidth = SQUARE_SIZE * SQUARE_UNIT;
 		const xOffset = (window.innerWidth - totalWidth) / 2;
 		const yOffset = (window.innerHeight - totalWidth) / 2;
@@ -328,27 +414,27 @@ const sketch = (p5: P5) => {
 			if (!selectedPiece) {
 				// Try to select a piece
 				if (chess.getPiece(boardX, boardY) !== "EMPTY") {
-					selectedPiece = {x: boardX, y: boardY};
+					selectedPiece = { x: boardX, y: boardY };
 					availableMoves = chess.getAvailableMoves(boardX, boardY);
 				}
 			} else {
 				// Check if click is on an available move
 				const selectedMove = availableMoves.find(move => move.x === boardX && move.y === boardY);
-				
+
 				if (selectedMove) {
 					// Determine if this move is a capture
 					const isCapture = chess.getPiece(selectedMove.x, selectedMove.y) !== "EMPTY";
-					const isEnPassant = chess.enPassantTarget && 
-						selectedMove.x === chess.enPassantTarget.x && 
+					const isEnPassant = chess.enPassantTarget &&
+						selectedMove.x === chess.enPassantTarget.x &&
 						selectedMove.y === chess.enPassantTarget.y;
-					
+
 					// Play appropriate sound
 					if (isCapture || isEnPassant) {
 						captureSound.play();
 					} else {
 						moveSound.play();
 					}
-					
+
 					// Check if this is a promotion move
 					if (selectedMove.promotion) {
 						// Immediately move the pawn to the promotion square (will become queen temporarily)
@@ -360,7 +446,7 @@ const sketch = (p5: P5) => {
 							undefined,
 							undefined // Default to queen temporarily
 						);
-						
+
 						// Set pending promotion state
 						pendingPromotion = {
 							fromX: selectedPiece.x,
@@ -368,13 +454,13 @@ const sketch = (p5: P5) => {
 							toX: selectedMove.x,
 							toY: selectedMove.y
 						};
-						
+
 						selectedPiece = null;
 						availableMoves = [];
 					} else {
 						// Start animation(s) for non-promotion move
 						animatedPieces = [];
-						
+
 						// Add main piece animation
 						animatedPieces.push({
 							fromX: selectedPiece.x,
@@ -384,7 +470,7 @@ const sketch = (p5: P5) => {
 							progress: 0,
 							piece: chess.getPiece(selectedPiece.x, selectedPiece.y)
 						});
-						
+
 						// Add secondary piece animation if available (e.g., rook move during castling)
 						if (selectedMove.secondary) {
 							animatedPieces.push({
@@ -400,7 +486,7 @@ const sketch = (p5: P5) => {
 				} else {
 					// Try to select a new piece
 					if (chess.getPiece(boardX, boardY) !== "EMPTY") {
-						selectedPiece = {x: boardX, y: boardY};
+						selectedPiece = { x: boardX, y: boardY };
 						availableMoves = chess.getAvailableMoves(boardX, boardY);
 					} else {
 						// Deselect if clicking on empty square that's not an available move
