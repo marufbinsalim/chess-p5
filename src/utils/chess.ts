@@ -27,14 +27,14 @@ export class Chess {
     getPieceName(piece: number): string {
         switch (piece) {
             case Chess.PIECES.WHITE_PAWN: return "wP";
-            case Chess.PIECES.WHITE_KNIGHT: return "wK";
+            case Chess.PIECES.WHITE_KNIGHT: return "wN";
             case Chess.PIECES.WHITE_BISHOP: return "wB";
             case Chess.PIECES.WHITE_ROOK: return "wR";
             case Chess.PIECES.WHITE_QUEEN: return "wQ";
             case Chess.PIECES.WHITE_KING: return "wK";
 
             case Chess.PIECES.BLACK_PAWN: return "bP";
-            case Chess.PIECES.BLACK_KNIGHT: return "bK";
+            case Chess.PIECES.BLACK_KNIGHT: return "bN";
             case Chess.PIECES.BLACK_BISHOP: return "bB";
             case Chess.PIECES.BLACK_ROOK: return "bR";
             case Chess.PIECES.BLACK_QUEEN: return "bQ";
