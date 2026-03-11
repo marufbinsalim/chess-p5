@@ -5,24 +5,10 @@ export function getIsBoardReversed(state: GameState): boolean {
     return state.chess.getWhiteTurn();
 }
 
-export function startSpinAnimation(state: GameState): void {
-    state.isSpinning = true;
-    state.spinAnimationProgress = 0;
-    state.targetOrientation = getIsBoardReversed(state);
-}
 
-export function updateSpinAnimation(state: GameState): void {
-    if (!state.isSpinning) return;
-    state.spinAnimationProgress += 0.05;
-    if (state.spinAnimationProgress >= 1) {
-        state.spinAnimationProgress = 1;
-        state.isSpinning = false;
-    }
-}
-
-/** During a spin, returns the target orientation so rendering stays correct. */
+/** get the current orientation of the board (white or black). */
 export function getCurrentOrientation(state: GameState): boolean {
-    return state.isSpinning ? state.targetOrientation : getIsBoardReversed(state);
+    return getIsBoardReversed(state);
 }
 
 /** Translate board coords → display coords based on current orientation. */

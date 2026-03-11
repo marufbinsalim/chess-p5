@@ -3,7 +3,6 @@ import { ColorUtil } from "../utils/color";
 import type { GameState } from "../state/gameState";
 
 export function drawTurnIndicator(p5: P5, colorUtil: ColorUtil, state: GameState): void {
-    if (state.isSpinning) return;
     const turnText = state.chess.getWhiteTurn() ? "White's Turn" : "Black's Turn";
 
     p5.fill(colorUtil.hexToRGBColor("#dbdbdb"));
@@ -18,7 +17,6 @@ export function drawTurnIndicator(p5: P5, colorUtil: ColorUtil, state: GameState
 }
 
 export function drawGameStatus(p5: P5, colorUtil: ColorUtil, state: GameState): void {
-    if (state.isSpinning) return;
     const chess = state.chess;
 
     let statusText = "";
@@ -59,7 +57,6 @@ export function drawCapturedPieces(
     yOffset: number,
     squareSize: number
 ): void {
-    if (state.isSpinning) return;
     const chess = state.chess;
 
     // White captured pieces — below the board

@@ -2,7 +2,6 @@ import P5 from "p5";
 import { getBoardLayout } from "../rendering/layout";
 import { screenToBoardCoords } from "../rendering/orientation";
 import { handlePromotionClick } from "../rendering/promotion";
-import { startSpinAnimation } from "../rendering/orientation";
 import type { GameState } from "../state/gameState";
 
 export function handleMouseClick(p5: P5, state: GameState): void {
@@ -13,7 +12,6 @@ export function handleMouseClick(p5: P5, state: GameState): void {
             const idx = state.pendingPromotion.toX + state.pendingPromotion.toY * 8;
             state.chess.board[idx] = selectedPiece;
             state.pendingPromotion = null;
-            startSpinAnimation(state);
         }
         return;
     }

@@ -23,7 +23,6 @@ import { Chess } from "./chess/Chess";
 import { ColorUtil } from "./utils/color";
 import type { GameState } from "./state/gameState";
 import { handleMouseClick } from "./input/mouse";
-import { startSpinAnimation, updateSpinAnimation } from "./rendering/orientation";
 import { getBoardLayout } from "./rendering/layout";
 import { drawBoard } from "./rendering/board";
 import { drawPromotionUI } from "./rendering/promotion";
@@ -44,8 +43,6 @@ const sketch = (p5: P5) => {
         availableMoves: [],
         animatedPieces: [],
         pendingPromotion: null,
-        spinAnimationProgress: 0,
-        isSpinning: false,
         targetOrientation: false,
     } as unknown as GameState;
 
@@ -87,21 +84,10 @@ const sketch = (p5: P5) => {
         p5.background(colorUtil.hexToRGBColor("#dbdbdb"));
         p5.noStroke();
 
-        updateSpinAnimation(state);
 
         const { SQUARE_SIZE, xOffset, yOffset } = getBoardLayout();
 
-        // Apply board spin transform
-        if (state.isSpinning) {
-            p5.push();
-            const { totalWidth } = getBoardLayout();
-            const centerX = xOffset + totalWidth / 2;
-            const centerY = yOffset + totalWidth / 2;
-            p5.translate(centerX, centerY);
-            const easeProgress = 1 - Math.pow(1 - state.spinAnimationProgress, 3);
-            p5.rotate(easeProgress * Math.PI);
-            p5.translate(-centerX, -centerY);
-        }
+
 
         drawBoard(p5, colorUtil, state);
 
@@ -111,9 +97,7 @@ const sketch = (p5: P5) => {
 
         drawAnimatedPieces(p5, state);
 
-        if (state.isSpinning) {
-            p5.pop();
-        }
+      
 
         drawTurnIndicator(p5, colorUtil, state);
         drawCapturedPieces(p5, colorUtil, state, xOffset, yOffset, SQUARE_SIZE);
@@ -157,7 +141,6 @@ function tickAnimations(state: GameState): void {
     state.selectedPiece  = null;
     state.availableMoves = [];
 
-    startSpinAnimation(state);
 }
 
 new P5(sketch);

@@ -19,9 +19,6 @@ export interface GameState {
 
     pendingPromotion: { fromX: number; fromY: number; toX: number; toY: number } | null;
 
-    // Board spin animation
-    spinAnimationProgress: number;
-    isSpinning: boolean;
     targetOrientation: boolean;
 
     moveSound: P5.SoundFile;
@@ -35,8 +32,6 @@ export function createInitialState(chess: Chess): Omit<GameState, "pieceToImageM
         availableMoves: [],
         animatedPieces: [],
         pendingPromotion: null,
-        spinAnimationProgress: 0,
-        isSpinning: false,
         targetOrientation: false,
     };
 }
