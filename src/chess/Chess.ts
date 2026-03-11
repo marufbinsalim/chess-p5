@@ -345,8 +345,8 @@ export class Chess {
         this.board[0] = PIECES.WHITE_ROOK;
         this.board[1] = PIECES.WHITE_KNIGHT;
         this.board[2] = PIECES.WHITE_BISHOP;
-        this.board[3] = PIECES.WHITE_QUEEN;
-        this.board[4] = PIECES.WHITE_KING;
+        this.board[3] = PIECES.WHITE_KING;
+        this.board[4] = PIECES.WHITE_QUEEN;
         this.board[5] = PIECES.WHITE_BISHOP;
         this.board[6] = PIECES.WHITE_KNIGHT;
         this.board[7] = PIECES.WHITE_ROOK;
@@ -357,14 +357,14 @@ export class Chess {
         this.board[56] = PIECES.BLACK_ROOK;
         this.board[57] = PIECES.BLACK_KNIGHT;
         this.board[58] = PIECES.BLACK_BISHOP;
-        this.board[59] = PIECES.BLACK_QUEEN;
-        this.board[60] = PIECES.BLACK_KING;
+        this.board[59] = PIECES.BLACK_KING;
+        this.board[60] = PIECES.BLACK_QUEEN;
         this.board[61] = PIECES.BLACK_BISHOP;
         this.board[62] = PIECES.BLACK_KNIGHT;
         this.board[63] = PIECES.BLACK_ROOK;
 
-        this.whiteKingPosition  = { x: 4, y: 0 };
-        this.blackKingPosition  = { x: 4, y: 7 };
+        this.whiteKingPosition  = { x: 3, y: 0 };
+        this.blackKingPosition  = { x: 3, y: 7 };
         this.whiteCastleKingside  = true;
         this.whiteCastleQueenside = true;
         this.blackCastleKingside  = true;
