@@ -49,6 +49,43 @@ export class Chess {
         return this.getPieceName(this.board[x + y * 8] || 0);
     }
 
+    // Get random available moves for a piece at position (x, y)
+    getAvailableMoves(x: number, y: number): {x: number, y: number}[] {
+        const moves: {x: number, y: number}[] = [];
+        const directions = [
+            {dx: -1, dy: -1}, {dx: 0, dy: -1}, {dx: 1, dy: -1},
+            {dx: -1, dy: 0},                     {dx: 1, dy: 0},
+            {dx: -1, dy: 1},  {dx: 0, dy: 1},  {dx: 1, dy: 1}
+        ];
+
+        // Generate up to 4 random moves
+        const numberOfMoves = Math.floor(Math.random() * 4) + 1;
+        
+        for (let i = 0; i < numberOfMoves; i++) {
+            const dirIndex = Math.floor(Math.random() * directions.length);
+            const dir = directions[dirIndex];
+            if (dir) {
+                const newX = x + dir.dx * (Math.floor(Math.random() * 3) + 1);
+                const newY = y + dir.dy * (Math.floor(Math.random() * 3) + 1);
+                
+                if (newX >= 0 && newX < 8 && newY >= 0 && newY < 8) {
+                    moves.push({x: newX, y: newY});
+                }
+            }
+        }
+
+        return moves;
+    }
+
+    // Move a piece from (fromX, fromY) to (toX, toY)
+    movePiece(fromX: number, fromY: number, toX: number, toY: number) {
+        const piece = this.board[fromX + fromY * 8];
+        if (piece !== undefined) {
+            this.board[fromX + fromY * 8] = Chess.PIECES.EMPTY;
+            this.board[toX + toY * 8] = piece;
+        }
+    }
+
     resetBoard() {
         this.board = new Array(64).fill(Chess.PIECES.EMPTY);
         this.board[0] = Chess.PIECES.WHITE_ROOK
