@@ -11,13 +11,17 @@ const sketch = (p5: P5) => {
 
 	let pieceToImageMap = new Map<string, P5.Image>();
 	let selectedPiece: {x: number, y: number} | null = null;
-	let availableMoves: {x: number, y: number}[] = [];
-	let animatedPiece: {
+	let availableMoves: Array<{
+		x: number; 
+		y: number; 
+		secondary?: {fromX: number; fromY: number; toX: number; toY: number} | undefined
+	}> = [];
+	let animatedPieces: Array<{
 		fromX: number, fromY: number,
 		toX: number, toY: number,
 		progress: number,
 		piece: string
-	} | null = null;
+	}> = [];
 
 	function setupCanvas() {
 		if (!canvas) canvas = p5.createCanvas(p5.windowWidth, p5.windowHeight);
@@ -27,7 +31,7 @@ const sketch = (p5: P5) => {
 		return canvas;
 	}
 
-	function setupChessBoard() {
+		function setupChessBoard() {
 		const SQUARE_UNIT = 8;
 		const SQUARE_SIZE = Math.min(window.innerWidth / SQUARE_UNIT, window.innerHeight / SQUARE_UNIT);
 		const totalWidth = SQUARE_SIZE * SQUARE_UNIT;
@@ -41,7 +45,8 @@ const sketch = (p5: P5) => {
 				p5.rect(xOffset + i * SQUARE_SIZE, yOffset + j * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE);
 				
 				const pieceImage = pieceToImageMap.get(chess.getPiece(i, j));
-				if (pieceImage && !(animatedPiece && animatedPiece.fromX === i && animatedPiece.fromY === j)) {
+				const isAnimated = animatedPieces.some(anim => anim.fromX === i && anim.fromY === j);
+				if (pieceImage && !isAnimated) {
 					p5.image(pieceImage, xOffset + i * SQUARE_SIZE, yOffset + j * SQUARE_SIZE);
 				}
 				
@@ -62,8 +67,8 @@ const sketch = (p5: P5) => {
 			}
 		}
 
-		// Draw animated piece
-		if (animatedPiece) {
+		// Draw animated pieces
+		for (const animatedPiece of animatedPieces) {
 			const pieceImage = pieceToImageMap.get(animatedPiece.piece);
 			if (pieceImage) {
 				const currentX = xOffset + (animatedPiece.fromX + (animatedPiece.toX - animatedPiece.fromX) * animatedPiece.progress) * SQUARE_SIZE;
@@ -101,17 +106,57 @@ const sketch = (p5: P5) => {
 		p5.background(colorUtil.hexToRGBColor("#dbdbdb"));
 		setupChessBoard();
 
-		// Update animation
-		if (animatedPiece) {
-			animatedPiece.progress += 0.05;
-			if (animatedPiece.progress >= 1) {
-				chess.movePiece(
-					animatedPiece.fromX,
-					animatedPiece.fromY,
-					animatedPiece.toX,
-					animatedPiece.toY
-				);
-				animatedPiece = null;
+		// Update animations
+		if (animatedPieces.length > 0) {
+			let allAnimationsComplete = true;
+			
+			for (const animatedPiece of animatedPieces) {
+				animatedPiece.progress += 0.05;
+				if (animatedPiece.progress < 1) {
+					allAnimationsComplete = false;
+				}
+			}
+
+			if (allAnimationsComplete) {
+				// All animations completed, finalize moves
+				// For castling, we have two animated pieces: king and rook
+				// We need to call movePiece once with the secondary move
+				
+				// Find if there's a main piece with secondary move (castling)
+				let hasSecondaryMove = false;
+				for (const animatedPiece of animatedPieces) {
+					// Check if this piece has a corresponding secondary move in availableMoves
+					const matchingMove = availableMoves.find(move => 
+						move.x === animatedPiece.toX && move.y === animatedPiece.toY
+					);
+					
+					if (matchingMove && matchingMove.secondary) {
+						// Handle main piece with secondary move (castling)
+						chess.movePiece(
+							animatedPiece.fromX,
+							animatedPiece.fromY,
+							animatedPiece.toX,
+							animatedPiece.toY,
+							matchingMove.secondary
+						);
+						hasSecondaryMove = true;
+						break;
+					}
+				}
+				
+				// If no secondary move (regular move), handle all animated pieces
+				if (!hasSecondaryMove) {
+					for (const animatedPiece of animatedPieces) {
+						chess.movePiece(
+							animatedPiece.fromX,
+							animatedPiece.fromY,
+							animatedPiece.toX,
+							animatedPiece.toY
+						);
+					}
+				}
+				
+				animatedPieces = [];
 				selectedPiece = null;
 				availableMoves = [];
 			}
@@ -138,18 +183,33 @@ const sketch = (p5: P5) => {
 				}
 			} else {
 				// Check if click is on an available move
-				const isAvailableMove = availableMoves.some(move => move.x === boardX && move.y === boardY);
+				const selectedMove = availableMoves.find(move => move.x === boardX && move.y === boardY);
 				
-				if (isAvailableMove) {
-					// Start animation
-					animatedPiece = {
+				if (selectedMove) {
+					// Start animation(s)
+					animatedPieces = [];
+					
+					// Add main piece animation
+					animatedPieces.push({
 						fromX: selectedPiece.x,
 						fromY: selectedPiece.y,
-						toX: boardX,
-						toY: boardY,
+						toX: selectedMove.x,
+						toY: selectedMove.y,
 						progress: 0,
 						piece: chess.getPiece(selectedPiece.x, selectedPiece.y)
-					};
+					});
+					
+					// Add secondary piece animation if available (e.g., rook move during castling)
+					if (selectedMove.secondary) {
+						animatedPieces.push({
+							fromX: selectedMove.secondary.fromX,
+							fromY: selectedMove.secondary.fromY,
+							toX: selectedMove.secondary.toX,
+							toY: selectedMove.secondary.toY,
+							progress: 0,
+							piece: chess.getPiece(selectedMove.secondary.fromX, selectedMove.secondary.fromY)
+						});
+					}
 				} else {
 					// Try to select a new piece
 					if (chess.getPiece(boardX, boardY) !== "EMPTY") {
