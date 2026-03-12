@@ -16,7 +16,7 @@ import wQ from "../assets/wQ.svg";
 import bQ from "../assets/bQ.svg";
 import wN from "../assets/wN.svg";
 import bN from "../assets/bN.svg";
-import moveSoundFile    from "../assets/move.mp3";
+import moveSoundFile from "../assets/move.mp3";
 import captureSoundFile from "../assets/capture.mp3";
 
 import { Chess } from "./chess/Chess";
@@ -28,6 +28,7 @@ import { drawBoard } from "./rendering/board";
 import { drawPromotionUI } from "./rendering/promotion";
 import { drawAnimatedPieces } from "./rendering/animation";
 import { drawCapturedPieces, drawGameStatus, drawTurnIndicator } from "./rendering/hud";
+import { MultiplayerManager } from "./database/multiplayer";
 
 // ─── Sketch ───────────────────────────────────────────────────────────────────
 
@@ -43,6 +44,8 @@ const sketch = (p5: P5) => {
         availableMoves: [],
         animatedPieces: [],
         pendingPromotion: null,
+        multiplayer: null,
+        chatMessages: [],
     } as unknown as GameState;
 
     // ── Canvas setup ──────────────────────────────────────────────────────────
@@ -66,13 +69,96 @@ const sketch = (p5: P5) => {
         load("wQ", wQ); load("bQ", bQ);
         load("wN", wN); load("bN", bN);
 
-        state.moveSound    = p5.loadSound(moveSoundFile);
+        state.moveSound = p5.loadSound(moveSoundFile);
         state.captureSound = p5.loadSound(captureSoundFile);
     };
 
     p5.setup = () => {
         setupCanvas();
         p5.mousePressed = () => handleMouseClick(p5, state);
+
+        // UI buttons
+        const createRoomBtn = document.getElementById('create-room-btn');
+        const leaveRoomBtn = document.getElementById('leave-room-btn');
+        const roomInfo = document.getElementById('room-info');
+
+        if (createRoomBtn) {
+            createRoomBtn.addEventListener('click', async () => {
+                const multiplayer = new MultiplayerManager();
+                state.multiplayer = multiplayer;
+
+                try {
+                    const roomId = await multiplayer.createRoom();
+                    console.log('Created room:', roomId);
+                    window.location.hash = roomId;
+                    const playerColor = multiplayer.getPlayerColor();
+                    // Update UI
+                    if (roomInfo) roomInfo.textContent = `Room ID: ${roomId}, color: ${playerColor}`;
+                    if (createRoomBtn) createRoomBtn.style.display = 'none';
+                    if (leaveRoomBtn) leaveRoomBtn.style.display = 'inline-block';
+
+                    // Set up room update listener
+                    multiplayer.onRoomUpdate((room) => {
+                        if (room.game_state) {
+                            state.chess.loadState(room.game_state);
+                        }
+                    });
+
+
+                } catch (error) {
+                    console.error('Error creating room:', error);
+                    state.multiplayer = null;
+                }
+            });
+        }
+
+        if (leaveRoomBtn) {
+            leaveRoomBtn.addEventListener('click', () => {
+                if (state.multiplayer) {
+                    state.multiplayer.cleanup();
+                    state.multiplayer = null;
+                    state.chess.resetBoard();
+                }
+
+                window.location.hash = '';
+
+                // Update UI
+                if (roomInfo) roomInfo.textContent = '';
+                if (createRoomBtn) createRoomBtn.style.display = 'inline-block';
+                if (leaveRoomBtn) leaveRoomBtn.style.display = 'none';
+            });
+        }
+
+        // Handle URL hash for multiplayer rooms
+        const hash = window.location.hash.slice(1);
+        if (hash) {
+            // Join existing room
+            const multiplayer = new MultiplayerManager();
+            state.multiplayer = multiplayer;
+
+            multiplayer.joinRoom(hash).then((success) => {
+                if (success) {
+                    const playerColor = multiplayer.getPlayerColor();
+
+                    console.log('Joined room:', hash);
+                    // Update UI
+                    if (roomInfo) roomInfo.textContent = `Room ID: ${hash}, color: ${playerColor}`;
+                    if (createRoomBtn) createRoomBtn.style.display = 'none';
+                    if (leaveRoomBtn) leaveRoomBtn.style.display = 'inline-block';
+
+                    // Set up room update listener
+                    multiplayer.onRoomUpdate((room) => {
+                        if (room.game_state) {
+                            state.chess.loadState(room.game_state);
+                        }
+                    });
+
+                } else {
+                    console.error('Failed to join room');
+                    state.multiplayer = null;
+                }
+            });
+        }
     };
 
     p5.windowResized = () => {
@@ -95,11 +181,10 @@ const sketch = (p5: P5) => {
         }
 
         drawAnimatedPieces(p5, state);
-		
+
         drawTurnIndicator(p5, colorUtil, state);
         drawCapturedPieces(p5, colorUtil, state, xOffset, yOffset, SQUARE_SIZE);
         drawGameStatus(p5, colorUtil, state);
-
         tickAnimations(state);
     };
 };
@@ -135,8 +220,13 @@ function tickAnimations(state: GameState): void {
     }
 
     state.animatedPieces = [];
-    state.selectedPiece  = null;
+    state.selectedPiece = null;
     state.availableMoves = [];
+
+    // Update game state in database for multiplayer
+    if (state.multiplayer) {
+        state.multiplayer.updateGameState(state.chess);
+    }
 
 }
 

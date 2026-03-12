@@ -1,6 +1,7 @@
 import P5 from "p5";
 import { Chess } from "../chess/Chess";
 import type { Move } from "../chess/moveTypes";
+import type { MultiplayerManager } from "../database/multiplayer";
 
 /** All mutable UI/game state shared across modules. */
 export interface GameState {
@@ -21,6 +22,9 @@ export interface GameState {
 
     moveSound: P5.SoundFile;
     captureSound: P5.SoundFile;
+
+    // Multiplayer state
+    multiplayer: MultiplayerManager | null;
 }
 
 export function createInitialState(chess: Chess): Omit<GameState, "pieceToImageMap" | "moveSound" | "captureSound"> {
@@ -30,5 +34,6 @@ export function createInitialState(chess: Chess): Omit<GameState, "pieceToImageM
         availableMoves: [],
         animatedPieces: [],
         pendingPromotion: null,
+        multiplayer: null,
     };
 }

@@ -6,9 +6,52 @@
 	<link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
 	<link href="https://fonts.googleapis.com/css?family=Montserrat&display=swap" rel="stylesheet" />
 	<link rel="stylesheet" href="main.css" />
+	<style>
+		#ui {
+			position: absolute;
+			top: 10px;
+			left: 10px;
+			z-index: 100;
+		}
+		
+		button {
+			padding: 10px 20px;
+			margin-right: 10px;
+			font-size: 16px;
+			cursor: pointer;
+			border: none;
+			border-radius: 5px;
+			background-color: #4CAF50;
+			color: white;
+			transition: background-color 0.3s;
+		}
+		
+		button:hover {
+			background-color: #45a049;
+		}
+		
+		button.secondary {
+			background-color: #008CBA;
+		}
+		
+		button.secondary:hover {
+			background-color: #007B9A;
+		}
+		
+		#room-info {
+			margin-top: 10px;
+			font-size: 14px;
+			color: #333;
+		}
+	</style>
 </head>
 
 <body>
+	<div id="ui">
+		<button id="create-room-btn">Create Room</button>
+		<button id="leave-room-btn" class="secondary" style="display: none;">Leave Room</button>
+		<div id="room-info"></div>
+	</div>
 	<div class="container">
 		<div id="app"></div>
 	</div>

@@ -5,6 +5,11 @@ import { handlePromotionClick } from "../rendering/promotion";
 import type { GameState } from "../state/gameState";
 
 export function handleMouseClick(p5: P5, state: GameState): void {
+    // In multiplayer, check if it's player's turn first
+    if (state.multiplayer && !state.multiplayer.isPlayerTurn(state.chess)) {
+        return;
+    }
+    
     // Handle pending promotion first
     if (state.pendingPromotion) {
         const selectedPiece = handlePromotionClick(p5, state, state.pendingPromotion);
@@ -13,6 +18,11 @@ export function handleMouseClick(p5: P5, state: GameState): void {
             state.chess.board[idx] = selectedPiece;
             state.pendingPromotion = null;
             state.chess.whiteTurn = !state.chess.whiteTurn; // Toggle turn after promotion is completed
+            
+            // Update game state in database for multiplayer
+            if (state.multiplayer) {
+                state.multiplayer.updateGameState(state.chess);
+            }
         }
         return;
     }

@@ -16,6 +16,7 @@ export function drawTurnIndicator(p5: P5, colorUtil: ColorUtil, state: GameState
     p5.text(turnText, p5.width / 2, 50);
 }
 
+
 export function drawGameStatus(p5: P5, colorUtil: ColorUtil, state: GameState): void {
     const chess = state.chess;
 

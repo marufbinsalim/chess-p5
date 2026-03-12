@@ -379,4 +379,21 @@ export class Chess {
         this.fullMoveNumber = 1;
         this.whiteTurn = true;
     }
+
+    // Load game state from JSON
+    loadState(gameState: any): void {
+        if (gameState.board) this.board = [...gameState.board];
+        if (gameState.whiteTurn !== undefined) this.whiteTurn = gameState.whiteTurn;
+        if (gameState.whiteKingPosition) this.whiteKingPosition = { ...gameState.whiteKingPosition };
+        if (gameState.blackKingPosition) this.blackKingPosition = { ...gameState.blackKingPosition };
+        if (gameState.whiteCastleKingside !== undefined) this.whiteCastleKingside = gameState.whiteCastleKingside;
+        if (gameState.whiteCastleQueenside !== undefined) this.whiteCastleQueenside = gameState.whiteCastleQueenside;
+        if (gameState.blackCastleKingside !== undefined) this.blackCastleKingside = gameState.blackCastleKingside;
+        if (gameState.blackCastleQueenside !== undefined) this.blackCastleQueenside = gameState.blackCastleQueenside;
+        if (gameState.enPassantTarget) this.enPassantTarget = { ...gameState.enPassantTarget };
+        if (gameState.halfMoveClock !== undefined) this.halfMoveClock = gameState.halfMoveClock;
+        if (gameState.fullMoveNumber !== undefined) this.fullMoveNumber = gameState.fullMoveNumber;
+        if (gameState.capturedWhitePieces) this._capturedWhitePieces = [...gameState.capturedWhitePieces];
+        if (gameState.capturedBlackPieces) this._capturedBlackPieces = [...gameState.capturedBlackPieces];
+    }
 }
