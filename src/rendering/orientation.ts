@@ -2,6 +2,7 @@ import type { GameState } from "../state/gameState";
 
 /** The board shows white's pieces at the bottom when white is playing, and vice versa. */
 export function getIsBoardReversed(state: GameState): boolean {
+    // return state.chess.getWhiteTurn();
     return state.chess.getWhiteTurn();
 }
 
@@ -9,6 +10,7 @@ export function getIsBoardReversed(state: GameState): boolean {
 /** get the current orientation of the board (white or black). */
 export function getCurrentOrientation(state: GameState): boolean {
     // return getIsBoardReversed(state); // use this if we want to flip the board in each turn
+    // return state.chess.getWhiteTurn();
     return true;
 }
 
@@ -19,7 +21,7 @@ export function translateBoardCoords(
     y: number
 ): { x: number; y: number } {
     if (getCurrentOrientation(state)) {
-        return { x: 7 - x, y: 7 - y };
+        return { x, y: 7 - y };
     }
     return { x, y };
 }

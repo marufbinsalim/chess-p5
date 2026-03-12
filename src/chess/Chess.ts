@@ -144,9 +144,9 @@ export class Chess {
 
     private _castlingRights(): CastlingRights {
         return {
-            whiteCastleKingside:  this.whiteCastleKingside,
+            whiteCastleKingside: this.whiteCastleKingside,
             whiteCastleQueenside: this.whiteCastleQueenside,
-            blackCastleKingside:  this.blackCastleKingside,
+            blackCastleKingside: this.blackCastleKingside,
             blackCastleQueenside: this.blackCastleQueenside,
         };
     }
@@ -156,7 +156,7 @@ export class Chess {
         toX: number, toY: number,
         secondary?: SecondaryMove
     ): boolean {
-        const piece         = this.getPieceAt(fromX, fromY);
+        const piece = this.getPieceAt(fromX, fromY);
         const capturedPiece = this.getPieceAt(toX, toY);
         const secondaryPiece = secondary ? this.getPieceAt(secondary.fromX, secondary.fromY) : undefined;
         const white = isWhitePiece(piece);
@@ -170,20 +170,20 @@ export class Chess {
 
         // Apply move temporarily
         this.board[getBoardIndex(fromX, fromY)] = PIECES.EMPTY;
-        this.board[getBoardIndex(toX, toY)]     = piece;
+        this.board[getBoardIndex(toX, toY)] = piece;
         if (secondary) {
             this.board[getBoardIndex(secondary.fromX, secondary.fromY)] = PIECES.EMPTY;
-            this.board[getBoardIndex(secondary.toX,   secondary.toY)]   = secondaryPiece!;
+            this.board[getBoardIndex(secondary.toX, secondary.toY)] = secondaryPiece!;
         }
 
         const kingInCheck = this.isInCheck(white);
 
         // Restore board
         this.board[getBoardIndex(fromX, fromY)] = piece;
-        this.board[getBoardIndex(toX, toY)]     = capturedPiece;
+        this.board[getBoardIndex(toX, toY)] = capturedPiece;
         if (secondary) {
             this.board[getBoardIndex(secondary.fromX, secondary.fromY)] = secondaryPiece!;
-            this.board[getBoardIndex(secondary.toX,   secondary.toY)]   = PIECES.EMPTY;
+            this.board[getBoardIndex(secondary.toX, secondary.toY)] = PIECES.EMPTY;
         }
 
         // Restore king positions
@@ -234,17 +234,17 @@ export class Chess {
 
     movePiece(
         fromX: number, fromY: number,
-        toX: number,   toY: number,
+        toX: number, toY: number,
         secondary?: SecondaryMove,
         promotionPiece?: number
     ): void {
-        const piece         = this.board[fromX + fromY * 8];
-        const capturedPiece = this.board[toX   + toY   * 8];
+        const piece = this.board[fromX + fromY * 8];
+        const capturedPiece = this.board[toX + toY * 8];
 
         // Track captures
         if (capturedPiece !== undefined && capturedPiece !== PIECES.EMPTY) {
             if (isWhitePiece(capturedPiece)) this._capturedWhitePieces.push(capturedPiece);
-            else                             this._capturedBlackPieces.push(capturedPiece);
+            else this._capturedBlackPieces.push(capturedPiece);
         }
 
         if (piece !== undefined) {
@@ -268,7 +268,7 @@ export class Chess {
             const rookPiece = this.board[secondary.fromX + secondary.fromY * 8];
             if (rookPiece !== undefined) {
                 this.board[secondary.fromX + secondary.fromY * 8] = PIECES.EMPTY;
-                this.board[secondary.toX   + secondary.toY   * 8] = rookPiece;
+                this.board[secondary.toX + secondary.toY * 8] = rookPiece;
             }
         }
 
@@ -296,10 +296,10 @@ export class Chess {
             this.blackKingPosition = { x: toX, y: toY };
         } else if (piece === PIECES.WHITE_ROOK) {
             if (fromX === 0 && fromY === 0) this.whiteCastleQueenside = false;
-            if (fromX === 7 && fromY === 0) this.whiteCastleKingside  = false;
+            if (fromX === 7 && fromY === 0) this.whiteCastleKingside = false;
         } else if (piece === PIECES.BLACK_ROOK) {
             if (fromX === 0 && fromY === 7) this.blackCastleQueenside = false;
-            if (fromX === 7 && fromY === 7) this.blackCastleKingside  = false;
+            if (fromX === 7 && fromY === 7) this.blackCastleKingside = false;
         }
     }
 
@@ -329,7 +329,7 @@ export class Chess {
         const isCapture = capturedPiece !== PIECES.EMPTY;
 
         if (isPawn || isCapture) this.halfMoveClock = 0;
-        else                     this.halfMoveClock++;
+        else this.halfMoveClock++;
 
         if (piece && isWhitePiece(piece)) this.fullMoveNumber++;
     }
@@ -341,37 +341,42 @@ export class Chess {
         this._capturedWhitePieces = [];
         this._capturedBlackPieces = [];
 
+
         // White back rank
         this.board[0] = PIECES.WHITE_ROOK;
         this.board[1] = PIECES.WHITE_KNIGHT;
         this.board[2] = PIECES.WHITE_BISHOP;
-        this.board[3] = PIECES.WHITE_KING;
-        this.board[4] = PIECES.WHITE_QUEEN;
+        this.board[3] = PIECES.WHITE_QUEEN;   
+        this.board[4] = PIECES.WHITE_KING;    
         this.board[5] = PIECES.WHITE_BISHOP;
         this.board[6] = PIECES.WHITE_KNIGHT;
         this.board[7] = PIECES.WHITE_ROOK;
-        for (let i = 8; i < 16; i++) this.board[i] = PIECES.WHITE_PAWN;
 
         // Black back rank
-        for (let i = 48; i < 56; i++) this.board[i] = PIECES.BLACK_PAWN;
         this.board[56] = PIECES.BLACK_ROOK;
         this.board[57] = PIECES.BLACK_KNIGHT;
         this.board[58] = PIECES.BLACK_BISHOP;
-        this.board[59] = PIECES.BLACK_KING;
-        this.board[60] = PIECES.BLACK_QUEEN;
+        this.board[59] = PIECES.BLACK_QUEEN;  
+        this.board[60] = PIECES.BLACK_KING;   
         this.board[61] = PIECES.BLACK_BISHOP;
         this.board[62] = PIECES.BLACK_KNIGHT;
         this.board[63] = PIECES.BLACK_ROOK;
 
-        this.whiteKingPosition  = { x: 3, y: 0 };
-        this.blackKingPosition  = { x: 3, y: 7 };
-        this.whiteCastleKingside  = true;
+        this.whiteKingPosition = { x: 4, y: 0 };  
+        this.blackKingPosition = { x: 4, y: 7 }; 
+
+        // White back rank
+        for (let i = 8; i < 16; i++) this.board[i] = PIECES.WHITE_PAWN;
+        // Black back rank
+        for (let i = 48; i < 56; i++) this.board[i] = PIECES.BLACK_PAWN;
+
+        this.whiteCastleKingside = true;
         this.whiteCastleQueenside = true;
-        this.blackCastleKingside  = true;
+        this.blackCastleKingside = true;
         this.blackCastleQueenside = true;
-        this.enPassantTarget    = null;
-        this.halfMoveClock      = 0;
-        this.fullMoveNumber     = 1;
-        this.whiteTurn          = true;
+        this.enPassantTarget = null;
+        this.halfMoveClock = 0;
+        this.fullMoveNumber = 1;
+        this.whiteTurn = true;
     }
 }
