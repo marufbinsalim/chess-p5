@@ -31,10 +31,10 @@ export function drawBoard(p5: P5, colorUtil: ColorUtil
             if (pieceImage && !isAnimating) {
                 p5.image(
                     pieceImage,
-                    xOffset + i * SQUARE_SIZE,
-                    yOffset + j * SQUARE_SIZE,
-                    SQUARE_SIZE * 0.9,
-                    SQUARE_SIZE * 0.9
+                    (SQUARE_SIZE * 0.15) + xOffset + i * SQUARE_SIZE,
+                    (SQUARE_SIZE * 0.15) + yOffset + j * SQUARE_SIZE,
+                    SQUARE_SIZE * 0.7,
+                    SQUARE_SIZE * 0.7
                 );
             }
 

@@ -11,11 +11,11 @@ export function drawAnimatedPieces(p5: P5, state: GameState): void {
         if (!pieceImage) continue;
 
         const { x: fromDisplayX, y: fromDisplayY } = translateBoardCoords(state, anim.fromX, anim.fromY);
-        const { x: toDisplayX,   y: toDisplayY   } = translateBoardCoords(state, anim.toX,   anim.toY);
+        const { x: toDisplayX, y: toDisplayY } = translateBoardCoords(state, anim.toX, anim.toY);
 
-        const currentX = xOffset + (fromDisplayX + (toDisplayX - fromDisplayX) * anim.progress) * SQUARE_SIZE;
-        const currentY = yOffset + (fromDisplayY + (toDisplayY - fromDisplayY) * anim.progress) * SQUARE_SIZE;
+        const currentX = (SQUARE_SIZE * 0.15) + xOffset + (fromDisplayX + (toDisplayX - fromDisplayX) * anim.progress) * SQUARE_SIZE;
+        const currentY = (SQUARE_SIZE * 0.15) + yOffset + (fromDisplayY + (toDisplayY - fromDisplayY) * anim.progress) * SQUARE_SIZE;
 
-        p5.image(pieceImage, currentX, currentY, SQUARE_SIZE * 0.9, SQUARE_SIZE * 0.9);
+        p5.image(pieceImage, currentX, currentY, SQUARE_SIZE * 0.7, SQUARE_SIZE * 0.7);
     }
 }
