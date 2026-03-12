@@ -27,7 +27,7 @@ export function handleMouseClick(p5: P5, state: GameState): void {
         return;
     }
 
-    const { SQUARE_SIZE, xOffset, yOffset } = getBoardLayout();
+    const { SQUARE_SIZE, xOffset, yOffset } = getBoardLayout(p5);
     const { x: boardX, y: boardY } = screenToBoardCoords(state, p5.mouseX, p5.mouseY, xOffset, yOffset, SQUARE_SIZE);
 
     if (boardX < 0 || boardX >= 8 || boardY < 0 || boardY >= 8) return;

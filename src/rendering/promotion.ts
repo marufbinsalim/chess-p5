@@ -45,7 +45,7 @@ export function drawPromotionUI(
     state: GameState,
     promotion: PromotionTarget
 ): void {
-    const { SQUARE_SIZE, xOffset, yOffset } = getBoardLayout();
+    const { SQUARE_SIZE, xOffset, yOffset } = getBoardLayout(p5);
     const { promotionX, promotionY } = getPromotionUIPosition(state, promotion, SQUARE_SIZE, xOffset, yOffset);
     const pieces = getPromotionPieces(promotion.toY === 7);
 
@@ -72,7 +72,7 @@ export function handlePromotionClick(
     state: GameState,
     promotion: PromotionTarget
 ): number | null {
-    const { SQUARE_SIZE, xOffset, yOffset } = getBoardLayout();
+    const { SQUARE_SIZE, xOffset, yOffset } = getBoardLayout(p5);
     const { promotionX, promotionY } = getPromotionUIPosition(state, promotion, SQUARE_SIZE, xOffset, yOffset);
     const pieces = getPromotionPieces(promotion.toY === 7);
 

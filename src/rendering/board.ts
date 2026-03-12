@@ -10,7 +10,7 @@ const DARK_SQUARE  = "#b17b58";
 
 export function drawBoard(p5: P5, colorUtil: ColorUtil
     , state: GameState): void {
-    const { SQUARE_SIZE, xOffset, yOffset } = getBoardLayout();
+    const { SQUARE_SIZE, xOffset, yOffset } = getBoardLayout(p5);
 
     let isDarkSquare = false;
     for (let i = 0; i < 8; i++) {

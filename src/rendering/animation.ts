@@ -4,7 +4,7 @@ import { translateBoardCoords } from "./orientation";
 import type { GameState } from "../state/gameState";
 
 export function drawAnimatedPieces(p5: P5, state: GameState): void {
-    const { SQUARE_SIZE, xOffset, yOffset } = getBoardLayout();
+    const { SQUARE_SIZE, xOffset, yOffset } = getBoardLayout(p5);
 
     for (const anim of state.animatedPieces) {
         const pieceImage = state.pieceToImageMap.get(anim.piece);

@@ -53,7 +53,7 @@ const sketch = (p5: P5) => {
     function setupCanvas(): void {
         if (!canvas) canvas = p5.createCanvas(p5.windowWidth, p5.windowHeight);
         canvas.parent("app");
-        p5.resizeCanvas(window.innerWidth, window.innerHeight);
+        p5.resizeCanvas(p5.windowWidth, p5.windowHeight);
         p5.background(colorUtil.hexToRGBColor("#dbdbdb"));
         p5.noStroke();
     }
@@ -170,7 +170,7 @@ const sketch = (p5: P5) => {
         p5.noStroke();
 
 
-        const { SQUARE_SIZE, xOffset, yOffset } = getBoardLayout();
+        const { SQUARE_SIZE, xOffset, yOffset } = getBoardLayout(p5);
 
 
 
